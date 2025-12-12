@@ -3,6 +3,7 @@ package ymgal
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -34,7 +35,12 @@ type (
 )
 
 func SearchGame(keyword string) (*SearchGameResp, error) {
-	r, err := sendWithRetry(fmt.Sprintf("%s/open/archive/search-game?mode=list&pageNum=1&keyword=%s&pageSize=1", cfg.Endpoint, strings.TrimSpace(keyword)))
+	escaped := url.QueryEscape(strings.TrimSpace(keyword))
+
+	url := fmt.Sprintf("%s/open/archive/search-game?mode=list&pageNum=1&keyword=%s&pageSize=5",
+		cfg.Endpoint, escaped)
+
+	r, err := sendWithRetry(url)
 	if err != nil {
 		return nil, err
 	}

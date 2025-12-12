@@ -14,7 +14,7 @@ var token tokenResp
 
 // 取得Token
 func GetToken() error {
-	if kurohelpercore.IsValidURL(cfg.Endpoint) {
+	if !kurohelpercore.IsValidURL(cfg.Endpoint) {
 		return ErrCfgInvalid
 	}
 

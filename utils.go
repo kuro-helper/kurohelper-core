@@ -1,6 +1,9 @@
 package kurohelpercore
 
-import "net/url"
+import (
+	"net/url"
+	"strings"
+)
 
 // check if the string is English
 func IsEnglish(r rune) bool {
@@ -20,6 +23,7 @@ func GetStringValue(value any) string {
 
 // 檢查URL是否合法
 func IsValidURL(rawURL string) bool {
+	rawURL = strings.TrimSpace(rawURL)
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return false
