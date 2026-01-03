@@ -88,9 +88,9 @@ type VnsResponse struct {
 }
 
 type ImageResponse struct {
-	Url      string `json:"url"`
-	Sexual   int    `json:"sexual"`
-	Violence int    `json:"violence"`
+	Url      string  `json:"url"`
+	Sexual   float64 `json:"sexual"`
+	Violence float64 `json:"violence"`
 }
 
 // [VNDB]外部連結Response
