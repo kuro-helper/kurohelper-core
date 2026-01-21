@@ -51,6 +51,7 @@ type FuzzySearchGameResponse struct {
 	Gamename                         string           `json:"gamename"`
 	SellDay                          string           `json:"sellday"`
 	Model                            string           `json:"model"`
+	DMM                              string           `json:"dmm"` // dmm image
 	Median                           string           `json:"median"`
 	TokutenCount                     string           `json:"count2"`
 	TotalPlayTimeMedian              string           `json:"total_play_time_median"`
@@ -103,10 +104,15 @@ type BrandGame struct {
 }
 
 type FuzzySearchListResponse struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Category string `json:"category"`
-	Model    string `json:"model"`
+	ID                               int    `json:"id"`
+	Name                             string `json:"name"`
+	DMM                              string `json:"dmm"` // dmm image
+	Median                           string `json:"median"`
+	TokutenCount                     string `json:"count2"`
+	TotalPlayTimeMedian              string `json:"total_play_time_median"`
+	TimeBeforeUnderstandingFunMedian string `json:"time_before_understanding_fun_median"`
+	Category                         string `json:"category"`
+	Model                            string `json:"model"`
 }
 
 type FuzzySearchCharacterResponse struct {
