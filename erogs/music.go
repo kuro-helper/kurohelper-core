@@ -14,31 +14,30 @@ type (
 		TokutenCount int     `json:"tokuten_count"` // 樣本數
 		AvgTokuten   float64 `json:"avg_tokuten"`   // 平均分數
 		Category     string  `json:"category"`      // 歌曲類型
-		GameName     string  `json:"game_name"`     // 對應的遊戲名稱
-		GameDMM      string  `json:"game_dmm"`      // 對應的DMM圖片(代號)
+		Games        []struct {
+			Name string `json:"name"` // 對應的遊戲名稱
+			DMM  string `json:"dmm"`  // 對應的DMM圖片(代號)
+		} `json:"games"` // 遊戲資料
 	}
 
 	Music struct {
-		ID             int                 `json:"music_id"`         // 歌曲ID
-		MusicName      string              `json:"musicname"`        // 歌曲名稱
-		PlayTime       string              `json:"playtime"`         // 歌曲長度
-		ReleaseDate    string              `json:"releasedate"`      // 發售日
-		AvgTokuten     float64             `json:"avg_tokuten"`      // 平均分數
-		TokutenCount   int                 `json:"tokuten_count"`    // 樣本數
-		Singers        string              `json:"singer_name"`      // 歌手
-		Lyrics         string              `json:"lyric_name"`       // 作詞家
-		Arrangments    string              `json:"arrangement_name"` // 作曲家
-		Compositions   string              `json:"composition_name"` // 編曲家
-		GameCategories []MusicGameCategory `json:"game_categories"`  // 遊戲資料相關
-		Album          string              `json:"album_name"`       // 收錄的專輯
-	}
-
-	// 查詢音樂的對應遊戲資料
-	MusicGameCategory struct {
-		GameDMM   string `json:"dmm"`        // 對應的DMM圖片(代號)
-		Category  string `json:"category"`   // 歌曲類型
-		GameName  string `json:"game_name"`  // 遊戲名稱
-		GameModel string `json:"game_model"` // 遊戲平台
+		ID             int     `json:"music_id"`         // 歌曲ID
+		MusicName      string  `json:"musicname"`        // 歌曲名稱
+		PlayTime       string  `json:"playtime"`         // 歌曲長度
+		ReleaseDate    string  `json:"releasedate"`      // 發售日
+		AvgTokuten     float64 `json:"avg_tokuten"`      // 平均分數
+		TokutenCount   int     `json:"tokuten_count"`    // 樣本數
+		Singers        string  `json:"singer_name"`      // 歌手
+		Lyrics         string  `json:"lyric_name"`       // 作詞家
+		Arrangments    string  `json:"arrangement_name"` // 作曲家
+		Compositions   string  `json:"composition_name"` // 編曲家
+		GameCategories []struct {
+			GameDMM   string `json:"dmm"`        // 對應的DMM圖片(代號)
+			Category  string `json:"category"`   // 歌曲類型
+			GameName  string `json:"game_name"`  // 遊戲名稱
+			GameModel string `json:"game_model"` // 遊戲平台
+		} `json:"game_categories"` // 遊戲資料相關
+		Album string `json:"album_name"` // 收錄的專輯
 	}
 )
 
@@ -121,12 +120,14 @@ FROM (
         m.tokuten_count,
         m.avg_tokuten,
         STRING_AGG(DISTINCT gm.category, ',') AS category,
-        STRING_AGG(DISTINCT gmlist.gamename, ', ') AS game_name,
-        STRING_AGG(DISTINCT gmlist.dmm, ', ') AS game_dmm
+        JSON_AGG(DISTINCT jsonb_build_object(
+            'name', gmlist.gamename,
+            'dmm', gmlist.dmm
+        )) AS games
     FROM filtered_music m
     LEFT JOIN game_music gm ON gm.music = m.music_id
     LEFT JOIN gamelist gmlist ON gmlist.id = gm.game
-    GROUP BY m.music_id,m.musicname,m.tokuten_count,m.avg_tokuten
+    GROUP BY m.music_id, m.musicname, m.tokuten_count, m.avg_tokuten
     ORDER BY tokuten_count DESC NULLS LAST, avg_tokuten DESC NULLS LAST
 ) t;
 `, resultTW, resultJP), nil
