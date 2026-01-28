@@ -3,10 +3,10 @@ module kurohelper-core
 go 1.24.0
 
 require (
-	kurohelper-db v0.0.0
 	github.com/kuro-helper/kurohelper-proxy v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	gorm.io/gorm v1.31.1
+	kurohelper-db v0.0.0
 )
 
 require (
