@@ -5,7 +5,6 @@ go 1.24.0
 require (
 	github.com/kuro-helper/kurohelper-proxy v1.0.0
 	github.com/sirupsen/logrus v1.9.3
-	gorm.io/gorm v1.31.1
 	kurohelper-db v0.0.0
 )
 
@@ -20,6 +19,7 @@ require (
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
+	gorm.io/gorm v1.31.1 // indirect
 )
 
 require (
