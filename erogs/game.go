@@ -45,6 +45,58 @@ type GameList struct {
 	TimeBeforeUnderstandingFunMedian string `json:"time_before_understanding_fun_median"`
 }
 
+// Use kewords search game list data
+func SearchGameListByKeyword(keywords []string) ([]GameList, error) {
+	if keywords == nil {
+		return nil, nil
+	}
+
+	// pre-build keySQL
+	keySQL := "WHERE "
+	var keywordSQLList []string
+	for _, k := range keywords {
+		formatK := buildSearchStringSQL(k)
+		if strings.TrimSpace(formatK) != "" {
+			keywordSQLList = append(keywordSQLList, fmt.Sprintf("gamename ILIKE '%s'", formatK))
+		}
+	}
+	keySQL += strings.Join(keywordSQLList, " OR")
+
+	sql := buildGameListSQL(keySQL)
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []GameList
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		fmt.Println(jsonText)
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// Use kewords search single game data
+func SearchGameByID(id int) (*Game, error) {
+	sql := buildGameSQL(fmt.Sprintf("WHERE id = '%d'", id))
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Game
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 // Use kewords search single game data
 func SearchGameByKeyword(keywords []string) (*Game, error) {
 	if keywords == nil {
@@ -78,56 +130,27 @@ func SearchGameByKeyword(keywords []string) (*Game, error) {
 	return &res, nil
 }
 
-// Use kewords search single game data
-func SearchGameByID(id int) (*Game, error) {
-	sql := buildGameSQL(fmt.Sprintf("WHERE id = '%d'", id))
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Game
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-// Use kewords search game list data
-func SearchGameListByKeyword(keywords []string) ([]GameList, error) {
-	if keywords == nil {
-		return nil, nil
-	}
-
-	// pre-build keySQL
-	keySQL := "WHERE "
-	var keywordSQLList []string
-	for _, k := range keywords {
-		formatK := buildSearchStringSQL(k)
-		if strings.TrimSpace(formatK) != "" {
-			keywordSQLList = append(keywordSQLList, fmt.Sprintf("gamename ILIKE '%s'", formatK))
-		}
-	}
-	keySQL += strings.Join(keywordSQLList, " OR")
-
-	sql := buildGameListSQL(keySQL)
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res []GameList
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		fmt.Println(jsonText)
-		return nil, err
-	}
-
-	return res, nil
+// build search game list sql
+// Arguments:
+//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
+func buildGameListSQL(keySQL string) string {
+	return fmt.Sprintf(`
+SELECT json_agg(row_to_json(t))
+FROM (
+    SELECT g.id,
+           g.gamename AS name,
+           g.model AS category,
+           g.dmm,
+           COALESCE(g.median::text, '無') AS median,
+           COALESCE(g.count2::text, '無') AS count2,
+           COALESCE(g.total_play_time_median::text, '無') AS total_play_time_median,
+           COALESCE(g.time_before_understanding_fun_median::text, '無') AS time_before_understanding_fun_median
+    FROM gamelist g
+    WHERE gamename ILIKE '%s' OR gamename ILIKE '%s'
+    ORDER BY count2 DESC NULLS LAST, median DESC NULLS LAST
+    LIMIT 200
+) t;
+`, keySQL)
 }
 
 // build search game sql
@@ -186,29 +209,6 @@ FROM (
         ORDER BY j.date DESC NULLS LAST
         LIMIT 1
     ) j ON TRUE
-) t;
-`, keySQL)
-}
-
-// build search game list sql
-// Arguments:
-//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
-func buildGameListSQL(keySQL string) string {
-	return fmt.Sprintf(`
-SELECT json_agg(row_to_json(t))
-FROM (
-    SELECT g.id,
-           g.gamename AS name,
-           g.model AS category,
-           g.dmm,
-           COALESCE(g.median::text, '無') AS median,
-           COALESCE(g.count2::text, '無') AS count2,
-           COALESCE(g.total_play_time_median::text, '無') AS total_play_time_median,
-           COALESCE(g.time_before_understanding_fun_median::text, '無') AS time_before_understanding_fun_median
-    FROM gamelist g
-    WHERE gamename ILIKE '%s' OR gamename ILIKE '%s'
-    ORDER BY count2 DESC NULLS LAST, median DESC NULLS LAST
-    LIMIT 200
 ) t;
 `, keySQL)
 }

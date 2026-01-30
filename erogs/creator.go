@@ -31,6 +31,58 @@ type CreatorList struct {
 	Name string `json:"name"`
 }
 
+// Use kewords search creator list data
+func SearchCreatorListByKeyword(keywords []string) ([]CreatorList, error) {
+	if keywords == nil {
+		return nil, nil
+	}
+
+	// pre-build keySQL
+	keySQL := "WHERE "
+	var keywordSQLList []string
+	for _, k := range keywords {
+		formatK := buildSearchStringSQL(k)
+		if strings.TrimSpace(formatK) != "" {
+			keywordSQLList = append(keywordSQLList, fmt.Sprintf("cr.name ILIKE '%s'", formatK))
+		}
+	}
+	keySQL += strings.Join(keywordSQLList, " OR")
+
+	sql := buildCreatorListSQL(keySQL)
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []CreatorList
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		fmt.Println(jsonText)
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// Use erogs id search single creator data
+func SearchCreatorByID(id int) (*Creator, error) {
+	sql := buildCreatorSQL(fmt.Sprintf("WHERE cr.id = '%d'", id))
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Creator
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 // Use kewords search single creator data
 func SearchCreatorByKeyword(keywords []string) (*Creator, error) {
 	if keywords == nil {
@@ -64,56 +116,21 @@ func SearchCreatorByKeyword(keywords []string) (*Creator, error) {
 	return &res, nil
 }
 
-// Use erogs id search single creator data
-func SearchCreatorByID(id int) (*Creator, error) {
-	sql := buildCreatorSQL(fmt.Sprintf("WHERE cr.id = '%d'", id))
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Creator
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-// Use kewords search creator list data
-func SearchCreatorListByKeyword(keywords []string) ([]CreatorList, error) {
-	if keywords == nil {
-		return nil, nil
-	}
-
-	// pre-build keySQL
-	keySQL := "WHERE "
-	var keywordSQLList []string
-	for _, k := range keywords {
-		formatK := buildSearchStringSQL(k)
-		if strings.TrimSpace(formatK) != "" {
-			keywordSQLList = append(keywordSQLList, fmt.Sprintf("cr.name ILIKE '%s'", formatK))
-		}
-	}
-	keySQL += strings.Join(keywordSQLList, " OR")
-
-	sql := buildCreatorListSQL(keySQL)
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res []CreatorList
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		fmt.Println(jsonText)
-		return nil, err
-	}
-
-	return res, nil
+// build search creator list sql
+// Arguments:
+//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
+func buildCreatorListSQL(keySQL string) string {
+	return fmt.Sprintf(`
+SELECT json_agg(row_to_json(c))
+FROM (
+    SELECT
+        cr.id,
+        cr.name
+    FROM createrlist cr
+    %s
+    LIMIT 200
+) AS c;
+`, keySQL)
 }
 
 // build search creator sql
@@ -163,21 +180,4 @@ FROM (
     %s
     LIMIT 1
 ) AS c;`, keySQL)
-}
-
-// build search creator list sql
-// Arguments:
-//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
-func buildCreatorListSQL(keySQL string) string {
-	return fmt.Sprintf(`
-SELECT json_agg(row_to_json(c))
-FROM (
-    SELECT
-        cr.id,
-        cr.name
-    FROM createrlist cr
-    %s
-    LIMIT 200
-) AS c;
-`, keySQL)
 }

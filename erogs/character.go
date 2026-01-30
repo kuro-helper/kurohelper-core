@@ -33,6 +33,58 @@ type CharacterList struct {
 	Model    string `json:"model"`
 }
 
+// Use kewords search character list data
+func SearchCharacterListByKeyword(keywords []string) ([]CharacterList, error) {
+	if keywords == nil {
+		return nil, nil
+	}
+
+	// pre-build keySQL
+	keySQL := "WHERE "
+	var keywordSQLList []string
+	for _, k := range keywords {
+		formatK := buildSearchStringSQL(k)
+		if strings.TrimSpace(formatK) != "" {
+			keywordSQLList = append(keywordSQLList, fmt.Sprintf("ch.name ILIKE '%s'", formatK))
+		}
+	}
+	keySQL += strings.Join(keywordSQLList, " OR")
+
+	sql := buildCharacterSQL(keySQL)
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []CharacterList
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		fmt.Println(jsonText)
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// Use kewords search single character data
+func SearchCharacterByID(id int) (*Character, error) {
+	sql := buildCreatorSQL(fmt.Sprintf("WHERE ch.id = '%d'", id))
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Character
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 // Use kewords search single character data
 func SearchCharacterByKeyword(keywords []string) (*Character, error) {
 	if keywords == nil {
@@ -66,56 +118,26 @@ func SearchCharacterByKeyword(keywords []string) (*Character, error) {
 	return &res, nil
 }
 
-// Use kewords search single character data
-func SearchCharacterByID(id int) (*Character, error) {
-	sql := buildCreatorSQL(fmt.Sprintf("WHERE ch.id = '%d'", id))
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Character
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-// Use kewords search character list data
-func SearchCharacterListByKeyword(keywords []string) ([]CharacterList, error) {
-	if keywords == nil {
-		return nil, nil
-	}
-
-	// pre-build keySQL
-	keySQL := "WHERE "
-	var keywordSQLList []string
-	for _, k := range keywords {
-		formatK := buildSearchStringSQL(k)
-		if strings.TrimSpace(formatK) != "" {
-			keywordSQLList = append(keywordSQLList, fmt.Sprintf("ch.name ILIKE '%s'", formatK))
-		}
-	}
-	keySQL += strings.Join(keywordSQLList, " OR")
-
-	sql := buildCharacterSQL(keySQL)
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res []CharacterList
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		fmt.Println(jsonText)
-		return nil, err
-	}
-
-	return res, nil
+// build search character list sql
+// Arguments:
+//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
+func buildCharacterListSQL(keySQL string) string {
+	return fmt.Sprintf(`
+    SELECT json_agg(row_to_json(t))
+    FROM (
+        SELECT 
+            ch.id AS id,
+            ch.name,
+            g.gamename AS gamename,
+            g.model
+        FROM characterlist ch
+        LEFT JOIN appearance a ON a.character = ch.id
+        LEFT JOIN gamelist g ON g.id = a.game
+        %s
+        ORDER BY g.count2 DESC NULLS LAST, g.median DESC NULLS LAST
+        LIMIT 200
+    ) t;
+    `, keySQL)
 }
 
 // build search character sql
@@ -175,26 +197,4 @@ FROM (
     LEFT JOIN createrlist cr ON cr.id = a.actor
 ) t;
 `, keySQL)
-}
-
-// build search character list sql
-// Arguments:
-//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
-func buildCharacterListSQL(keySQL string) string {
-	return fmt.Sprintf(`
-    SELECT json_agg(row_to_json(t))
-    FROM (
-        SELECT 
-            ch.id AS id,
-            ch.name,
-            g.gamename AS gamename,
-            g.model
-        FROM characterlist ch
-        LEFT JOIN appearance a ON a.character = ch.id
-        LEFT JOIN gamelist g ON g.id = a.game
-        %s
-        ORDER BY g.count2 DESC NULLS LAST, g.median DESC NULLS LAST
-        LIMIT 200
-    ) t;
-    `, keySQL)
 }

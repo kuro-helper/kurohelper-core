@@ -35,6 +35,25 @@ type (
 	}
 )
 
+// Use erogs id search single brand data
+func SearchBrandByID(id int) (*Brand, error) {
+	sql := buildBrandSQL(fmt.Sprintf("WHERE id = '%d'", id))
+
+	jsonText, err := sendPostRequest(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	var res Brand
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		fmt.Println(jsonText)
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 // Use kewords search single brand data
 func SearchBrandByKeyword(keywords []string) (*Brand, error) {
 	if keywords == nil {
@@ -53,25 +72,6 @@ func SearchBrandByKeyword(keywords []string) (*Brand, error) {
 	keySQL += strings.Join(keywordSQLList, " OR")
 
 	sql := buildBrandSQL(keySQL)
-
-	jsonText, err := sendPostRequest(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	var res Brand
-	err = json.Unmarshal([]byte(jsonText), &res)
-	if err != nil {
-		fmt.Println(jsonText)
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-// Use erogs id search single brand data
-func SearchBrandByID(id int) (*Brand, error) {
-	sql := buildBrandSQL(fmt.Sprintf("WHERE id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
