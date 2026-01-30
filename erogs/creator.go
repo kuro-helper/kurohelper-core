@@ -3,8 +3,7 @@ package erogs
 import (
 	"encoding/json"
 	"fmt"
-
-	kurohelpercore "kurohelper-core"
+	"strings"
 )
 
 // 只抓一筆(LIMIT 1)
@@ -32,15 +31,24 @@ type CreatorList struct {
 	Name string `json:"name"`
 }
 
-func GetCreatorByFuzzy(search string, idSearch bool) (*Creator, error) {
-	searchJP := ""
-	if !idSearch {
-		searchJP = kurohelpercore.ZhTwToJp(search)
+// Use kewords search single creator data
+func SearchCreatorByKeyword(keywords []string) (*Creator, error) {
+	if keywords == nil {
+		return nil, nil
 	}
-	sql, err := buildFuzzySearchCreatorSQL(search, searchJP, idSearch)
-	if err != nil {
-		return nil, err
+
+	// pre-build keySQL
+	keySQL := "WHERE "
+	var keywordSQLList []string
+	for _, k := range keywords {
+		formatK := buildSearchStringSQL(k)
+		if strings.TrimSpace(formatK) != "" {
+			keywordSQLList = append(keywordSQLList, fmt.Sprintf("cr.name ILIKE '%s'", formatK))
+		}
 	}
+	keySQL += strings.Join(keywordSQLList, " OR")
+
+	sql := buildCreatorSQL(keySQL)
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
@@ -56,12 +64,42 @@ func GetCreatorByFuzzy(search string, idSearch bool) (*Creator, error) {
 	return &res, nil
 }
 
-func GetCreatorListByFuzzy(search string) (*[]CreatorList, error) {
-	searchJP := kurohelpercore.ZhTwToJp(search)
-	sql, err := buildFuzzySearchCreatorListSQL(search, searchJP)
+// Use erogs id search single creator data
+func SearchCreatorByID(id string) (*Creator, error) {
+	sql := buildCreatorSQL(fmt.Sprintf("WHERE cr.id = '%s'", id))
+
+	jsonText, err := sendPostRequest(sql)
 	if err != nil {
 		return nil, err
 	}
+
+	var res Creator
+	err = json.Unmarshal([]byte(jsonText), &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+// Use kewords search creator list data
+func SearchCreatorListByKeyword(keywords []string) ([]CreatorList, error) {
+	if keywords == nil {
+		return nil, nil
+	}
+
+	// pre-build keySQL
+	keySQL := "WHERE "
+	var keywordSQLList []string
+	for _, k := range keywords {
+		formatK := buildSearchStringSQL(k)
+		if strings.TrimSpace(formatK) != "" {
+			keywordSQLList = append(keywordSQLList, fmt.Sprintf("cr.name ILIKE '%s'", formatK))
+		}
+	}
+	keySQL += strings.Join(keywordSQLList, " OR")
+
+	sql := buildCreatorListSQL(keySQL)
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
@@ -75,26 +113,13 @@ func GetCreatorListByFuzzy(search string) (*[]CreatorList, error) {
 		return nil, err
 	}
 
-	return &res, nil
+	return res, nil
 }
 
-func buildFuzzySearchCreatorSQL(searchTW string, searchJP string, idSearch bool) (string, error) {
-	searchString := ""
-	if idSearch {
-		idString := searchTW[1:]
-		searchString = fmt.Sprintf("WHERE cr.id = %s", idString)
-	} else {
-		resultTW, err := buildSearchStringSQL(searchTW)
-		if err != nil {
-			return "", err
-		}
-
-		resultJP, err := buildSearchStringSQL(searchJP)
-		if err != nil {
-			return "", err
-		}
-		searchString = fmt.Sprintf("WHERE cr.name ILIKE '%s' OR cr.name ILIKE '%s'", resultTW, resultJP)
-	}
+// build search creator sql
+// Arguments:
+//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
+func buildCreatorSQL(keySQL string) string {
 	return fmt.Sprintf(`
 SELECT row_to_json(c)
 FROM (
@@ -137,19 +162,13 @@ FROM (
     FROM createrlist cr
     %s
     LIMIT 1
-) AS c;`, searchString), nil
+) AS c;`, keySQL)
 }
 
-func buildFuzzySearchCreatorListSQL(searchTW string, searchJP string) (string, error) {
-	resultTW, err := buildSearchStringSQL(searchTW)
-	if err != nil {
-		return "", err
-	}
-
-	resultJP, err := buildSearchStringSQL(searchJP)
-	if err != nil {
-		return "", err
-	}
+// build search creator list sql
+// Arguments:
+//   - keySQL: A pre-constructed SQL WHERE-clause fragment.
+func buildCreatorListSQL(keySQL string) string {
 	return fmt.Sprintf(`
 SELECT json_agg(row_to_json(c))
 FROM (
@@ -157,8 +176,8 @@ FROM (
         cr.id,
         cr.name
     FROM createrlist cr
-    WHERE cr.name ILIKE '%s' OR cr.name ILIKE '%s'
+    %s
     LIMIT 200
 ) AS c;
-`, resultTW, resultJP), nil
+`, keySQL)
 }
