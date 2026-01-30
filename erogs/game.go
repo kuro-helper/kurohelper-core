@@ -146,7 +146,7 @@ FROM (
            COALESCE(g.total_play_time_median::text, '無') AS total_play_time_median,
            COALESCE(g.time_before_understanding_fun_median::text, '無') AS time_before_understanding_fun_median
     FROM gamelist g
-    WHERE gamename ILIKE '%s' OR gamename ILIKE '%s'
+    %s
     ORDER BY count2 DESC NULLS LAST, median DESC NULLS LAST
     LIMIT 200
 ) t;
