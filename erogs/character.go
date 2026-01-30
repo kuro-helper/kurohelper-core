@@ -67,8 +67,8 @@ func SearchCharacterByKeyword(keywords []string) (*Character, error) {
 }
 
 // Use kewords search single character data
-func SearchCharacterByID(id string) (*Character, error) {
-	sql := buildCreatorSQL(fmt.Sprintf("WHERE ch.id = '%s'", id))
+func SearchCharacterByID(id int) (*Character, error) {
+	sql := buildCreatorSQL(fmt.Sprintf("WHERE ch.id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {

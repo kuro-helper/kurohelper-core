@@ -65,8 +65,8 @@ func SearchCreatorByKeyword(keywords []string) (*Creator, error) {
 }
 
 // Use erogs id search single creator data
-func SearchCreatorByID(id string) (*Creator, error) {
-	sql := buildCreatorSQL(fmt.Sprintf("WHERE cr.id = '%s'", id))
+func SearchCreatorByID(id int) (*Creator, error) {
+	sql := buildCreatorSQL(fmt.Sprintf("WHERE cr.id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {

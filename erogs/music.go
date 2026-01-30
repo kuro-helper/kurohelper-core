@@ -75,8 +75,8 @@ func SearchMusicListByKeyword(keywords []string) ([]MusicList, error) {
 }
 
 // Use kewords search single music data
-func SearchMusicByID(id string) (*Music, error) {
-	sql := buildMusicSQL(fmt.Sprintf("WHERE m.id = '%s'", id))
+func SearchMusicByID(id int) (*Music, error) {
+	sql := buildMusicSQL(fmt.Sprintf("WHERE m.id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {

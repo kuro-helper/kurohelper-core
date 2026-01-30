@@ -79,8 +79,8 @@ func SearchGameByKeyword(keywords []string) (*Game, error) {
 }
 
 // Use kewords search single game data
-func SearchGameByID(id string) (*Game, error) {
-	sql := buildGameSQL(fmt.Sprintf("WHERE id = '%s'", id))
+func SearchGameByID(id int) (*Game, error) {
+	sql := buildGameSQL(fmt.Sprintf("WHERE id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {

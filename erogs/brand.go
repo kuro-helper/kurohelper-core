@@ -70,8 +70,8 @@ func SearchBrandByKeyword(keywords []string) (*Brand, error) {
 }
 
 // Use erogs id search single brand data
-func SearchBrandByID(id string) (*Brand, error) {
-	sql := buildBrandSQL(fmt.Sprintf("WHERE id = '%s'", id))
+func SearchBrandByID(id int) (*Brand, error) {
+	sql := buildBrandSQL(fmt.Sprintf("WHERE id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
