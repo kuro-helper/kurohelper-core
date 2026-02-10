@@ -24,7 +24,8 @@ type (
 		GameList      []struct {
 			ID       int    `json:"id"`
 			GameName string `json:"gamename"`
-			DMM      string `json:"dmm"` // dmm image
+			DMM      string `json:"dmm"`      // dmm image
+			Category string `json:"category"` // 遊戲平台
 			Furigana string `json:"furigana"`
 			SellDay  string `json:"sellday"`
 			Model    string `json:"model"`
@@ -136,6 +137,7 @@ FROM (
                     'id', g.id,
                     'gamename', g.gamename,
 					'dmm', g.dmm,
+					'category', g.model,
                     'furigana', g.furigana,
                     'sellday', g.sellday,
                     'median', g.median,
