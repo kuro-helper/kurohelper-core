@@ -50,7 +50,7 @@ func SearchCharacterListByKeyword(keywords []string) ([]CharacterList, error) {
 	}
 	keySQL += strings.Join(keywordSQLList, " OR ")
 
-	sql := buildCharacterSQL(keySQL)
+	sql := buildCharacterListSQL(keySQL)
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
@@ -60,7 +60,6 @@ func SearchCharacterListByKeyword(keywords []string) ([]CharacterList, error) {
 	var res []CharacterList
 	err = json.Unmarshal([]byte(jsonText), &res)
 	if err != nil {
-		fmt.Println(jsonText)
 		return nil, err
 	}
 
@@ -69,7 +68,7 @@ func SearchCharacterListByKeyword(keywords []string) ([]CharacterList, error) {
 
 // Use kewords search single character data
 func SearchCharacterByID(id int) (*Character, error) {
-	sql := buildCreatorSQL(fmt.Sprintf("WHERE ch.id = '%d'", id))
+	sql := buildCharacterSQL(fmt.Sprintf("WHERE ch.id = '%d'", id))
 
 	jsonText, err := sendPostRequest(sql)
 	if err != nil {
